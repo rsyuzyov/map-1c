@@ -50,7 +50,7 @@
 			</UsePurposes>
 			<ScriptVariant>Russian</ScriptVariant>
 			<Vendor/>
-			<Version>1.0.0.2</Version>
+			<Version>1.0.0.3</Version>
 			<Caption/>
 			<ShortCaption/>
 			<BriefInformation/>
@@ -66,6 +66,8 @@
 			<CommonModule>кр_Геокодер</CommonModule>
 			<CommonModule>кр_ИсточникДоговоры</CommonModule>
 			<Catalog>Проекты</Catalog>
+			<Catalog>ДоговорыКонтрагентов</Catalog>
+			<Catalog>Контрагенты</Catalog>
 			<DataProcessor>кр_КартаОбъектов</DataProcessor>
 			<InformationRegister>кр_КоординатыОбъектов</InformationRegister>
 		</ChildObjects>
