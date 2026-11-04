@@ -44,15 +44,15 @@
 						<Event name="OnChange">ТорговыйПредставительПриИзменении</Event>
 					</Events>
 				</InputField>
-				<LabelField name="Сводка" id="10">
-					<DataPath>Сводка</DataPath>
-					<TitleLocation>None</TitleLocation>
-					<HorizontalStretch>true</HorizontalStretch>
-					<ContextMenu name="СводкаКонтекстноеМеню" id="11"/>
-					<ExtendedTooltip name="СводкаРасширеннаяПодсказка" id="12"/>
-				</LabelField>
 			</ChildItems>
 		</UsualGroup>
+		<LabelField name="Сводка" id="10">
+			<DataPath>Сводка</DataPath>
+			<TitleLocation>None</TitleLocation>
+			<HorizontalStretch>true</HorizontalStretch>
+			<ContextMenu name="СводкаКонтекстноеМеню" id="11"/>
+			<ExtendedTooltip name="СводкаРасширеннаяПодсказка" id="12"/>
+		</LabelField>
 		<HTMLDocumentField name="Карта" id="13">
 			<DataPath>КартаHTML</DataPath>
 			<TitleLocation>None</TitleLocation>

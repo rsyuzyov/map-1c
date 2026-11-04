@@ -73,6 +73,8 @@
 	|<script>
 	|var points = [ТочкиКарты];
 	|var map = L.map('map');
+	|map.createPane('approximatePane');
+	|map.getPane('approximatePane').style.zIndex = 650;
 	|L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	|  maxZoom: 19,
 	|  attribution: '&copy; <a href=""https://www.openstreetmap.org/copyright"">OpenStreetMap</a>'
@@ -84,7 +86,7 @@
 	|    + '<a class=""point-link"" href=""#point-' + point[4] + '"">Открыть</a>';
 	|  if (point[5] === 1) {
 	|    popupText = popupText + '<div><i>Точка приблизительная: найдена без дома или улицы</i></div>';
-	|    L.circleMarker([point[0], point[1]], {radius: 8, color: '#d9480f', fillColor: '#fd7e14', fillOpacity: 0.8, weight: 2}).addTo(map).bindPopup(popupText);
+	|    L.circleMarker([point[0], point[1]], {pane: 'approximatePane', radius: 8, color: '#d9480f', fillColor: '#fd7e14', fillOpacity: 0.9, weight: 2}).addTo(map).bindPopup(popupText);
 	|  } else {
 	|    L.marker([point[0], point[1]]).addTo(map).bindPopup(popupText);
 	|  }
