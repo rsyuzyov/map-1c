@@ -49,6 +49,7 @@
 
 // Точки - массив структур с полями Широта, Долгота, Заголовок, Описание, Индекс и необязательным Приблизительно (Булево).
 // Приблизительные точки (найдены без дома или улицы) рисуются оранжевыми кружками.
+// Точки с одинаковыми координатами разносятся по спирали на десятки метров, чтобы не закрывать друг друга.
 // Индекс возвращается в событие ПриНажатии поля HTML ссылкой вида #point-<Индекс>.
 Функция HTMLКарты(Точки) Экспорт
 
@@ -80,8 +81,18 @@
 	|  attribution: '&copy; <a href=""https://www.openstreetmap.org/copyright"">OpenStreetMap</a>'
 	|}).addTo(map);
 	|var bounds = [];
+	|var sameCoordinates = {};
 	|for (var pointIndex = 0; pointIndex < points.length; pointIndex++) {
 	|  var point = points[pointIndex];
+	|  var coordinateKey = point[0] + ',' + point[1];
+	|  var duplicateNumber = sameCoordinates[coordinateKey] || 0;
+	|  sameCoordinates[coordinateKey] = duplicateNumber + 1;
+	|  if (duplicateNumber > 0) {
+	|    var ringAngle = duplicateNumber * 2.4;
+	|    var ringRadius = 0.00025 * Math.sqrt(duplicateNumber);
+	|    point[0] = point[0] + ringRadius * Math.cos(ringAngle);
+	|    point[1] = point[1] + ringRadius * 1.8 * Math.sin(ringAngle);
+	|  }
 	|  var popupText = '<div>' + point[2] + '</div><div>' + point[3] + '</div>'
 	|    + '<a class=""point-link"" href=""#point-' + point[4] + '"">Открыть</a>';
 	|  if (point[5] === 1) {
