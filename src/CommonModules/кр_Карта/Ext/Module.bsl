@@ -149,7 +149,7 @@
 	|    + '<a class=""point-link"" href=""#point-' + point[4] + '"">Открыть</a>';
 	|  if (point[5] === 1) {
 	|    popupText = popupText + '<div><i>Точка приблизительная: найдена без дома или улицы</i></div>';
-	|    L.circleMarker([point[0], point[1]], {pane: 'approximatePane', radius: 8, color: '#d9480f', fillColor: '#fd7e14', fillOpacity: 0.9, weight: 2}).addTo(clientLayer).bindPopup(popupText);
+	|    L.circleMarker([point[0], point[1]], {pane: 'approximatePane', radius: manyPoints ? 5 : 8, color: '#d9480f', fillColor: '#fd7e14', fillOpacity: 0.9, weight: manyPoints ? 1 : 2}).addTo(clientLayer).bindPopup(popupText);
 	|  } else if (manyPoints) {
 	|    L.circleMarker([point[0], point[1]], {radius: 5, color: '#1864ab', fillColor: '#339af0', fillOpacity: 0.9, weight: 1}).addTo(clientLayer).bindPopup(popupText);
 	|  } else {
@@ -180,7 +180,7 @@
 	|    L.polyline(lineCoordinates, isCity ? {color: '#1c7ed6', weight: 2, dashArray: '6 4', interactive: false} : {color: '#7048e8', weight: 2, opacity: 0.7, interactive: false}).addTo(targetLayer);
 	|  }
 	|  if (maxLat >= minLat) {
-	|    var districtName = (district.name || '').replace(' муниципальный округ', ' м. о.').replace(' городской округ', ' г. о.');
+	|    var districtName = (district.name || '').replace(/^муниципальный округ (.+)$/, '$1 м. о.').replace(' муниципальный округ', ' м. о.').replace(' городской округ', ' г. о.');
 	|    var districtLabel = L.tooltip({permanent: true, direction: 'center', className: 'district-label' + (isCity ? ' city' : '')})
 	|      .setLatLng([(minLat + maxLat) / 2, (minLon + maxLon) / 2]).setContent(districtName);
 	|    (isCity ? cityLabels : regionLabels).push({label: districtLabel, layer: targetLayer});
