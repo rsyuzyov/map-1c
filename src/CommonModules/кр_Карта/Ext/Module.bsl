@@ -77,16 +77,29 @@
 // Приблизительные точки (найдены без дома или улицы) рисуются оранжевыми кружками.
 // Точки с одинаковыми координатами разносятся по спирали на десятки метров, чтобы не закрывать друг друга.
 // Индекс возвращается в событие ПриНажатии поля HTML ссылкой вида #point-<Индекс>.
-Функция HTMLКарты(Точки) Экспорт
+// ПараметрыКарты - Структура, Неопределено - ТочкиНеКлиентов (массив структур Широта, Долгота, Заголовок, Описание)
+//  и ГраницыРайоновJSON (строка, см. кр_ТочкиПродаж.ГраницыРайоновJSON).
+Функция HTMLКарты(Точки, ПараметрыКарты = Неопределено) Экспорт
 
-	ТекстТочек = "";
+	ЗаписиТочек = Новый Массив;
 	Для Каждого ТочкаКарты Из Точки Цикл
 		ТочкаПриблизительная = ТочкаКарты.Свойство("Приблизительно") И ТочкаКарты.Приблизительно = Истина;
-		ТекстТочек = ТекстТочек + СтрШаблон("[%1,%2,""%3"",""%4"",%5,%6],",
+		ЗаписиТочек.Добавить(СтрШаблон("[%1,%2,""%3"",""%4"",%5,%6]",
 			ФорматКоординаты(ТочкаКарты.Широта), ФорматКоординаты(ТочкаКарты.Долгота),
 			ЭкранироватьДляJS(ТочкаКарты.Заголовок), ЭкранироватьДляJS(ТочкаКарты.Описание),
-			Формат(ТочкаКарты.Индекс, "ЧН=0; ЧГ="), ?(ТочкаПриблизительная, "1", "0"));
+			Формат(ТочкаКарты.Индекс, "ЧН=0; ЧГ="), ?(ТочкаПриблизительная, "1", "0")));
 	КонецЦикла;
+
+	ЗаписиНеКлиентов = Новый Массив;
+	ТекстГраниц = "[]";
+	Если ПараметрыКарты <> Неопределено Тогда
+		Для Каждого ТочкаНеКлиента Из ПараметрыКарты.ТочкиНеКлиентов Цикл
+			ЗаписиНеКлиентов.Добавить(СтрШаблон("[%1,%2,""%3"",""%4""]",
+				ФорматКоординаты(ТочкаНеКлиента.Широта), ФорматКоординаты(ТочкаНеКлиента.Долгота),
+				ЭкранироватьДляJS(ТочкаНеКлиента.Заголовок), ЭкранироватьДляJS(ТочкаНеКлиента.Описание)));
+		КонецЦикла;
+		ТекстГраниц = ПараметрыКарты.ГраницыРайоновJSON;
+	КонецЕсли;
 
 	ТекстСтраницы =
 	"<!DOCTYPE html>
@@ -95,17 +108,30 @@
 	|<meta charset=""utf-8"">
 	|<link rel=""stylesheet"" href=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"">
 	|<script src=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.js""></script>
-	|<style>html, body, #map {height: 100%; margin: 0;} .point-link {font-weight: bold;}</style>
+	|<style>html, body, #map {height: 100%; margin: 0;} .point-link {font-weight: bold;}
+	|.district-label {background: transparent; border: none; box-shadow: none; font: bold 11px sans-serif; color: #5f3dc4; text-shadow: 0 0 3px #fff;}
+	|.district-label.city {color: #1864ab;}
+	|.legend {background: #fff; padding: 6px 8px; font: 12px sans-serif; line-height: 18px; border-radius: 4px;}
+	|.legend i {display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px;}</style>
 	|</head><body><div id=""map""></div>
 	|<script>
 	|var points = [ТочкиКарты];
-	|var map = L.map('map');
+	|var otherPoints = [ТочкиНеКлиентов];
+	|var districts = ГраницыРайонов;
+	|var map = L.map('map', {preferCanvas: true});
 	|map.createPane('approximatePane');
 	|map.getPane('approximatePane').style.zIndex = 650;
 	|L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	|  maxZoom: 19,
 	|  attribution: '&copy; <a href=""https://www.openstreetmap.org/copyright"">OpenStreetMap</a>'
 	|}).addTo(map);
+	|var clientLayer = L.layerGroup().addTo(map);
+	|var otherLayer = L.layerGroup().addTo(map);
+	|var regionLayer = L.layerGroup().addTo(map);
+	|var cityLayer = L.layerGroup().addTo(map);
+	|var regionLabels = [];
+	|var cityLabels = [];
+	|var manyPoints = points.length > 500;
 	|var bounds = [];
 	|var sameCoordinates = {};
 	|for (var pointIndex = 0; pointIndex < points.length; pointIndex++) {
@@ -123,17 +149,75 @@
 	|    + '<a class=""point-link"" href=""#point-' + point[4] + '"">Открыть</a>';
 	|  if (point[5] === 1) {
 	|    popupText = popupText + '<div><i>Точка приблизительная: найдена без дома или улицы</i></div>';
-	|    L.circleMarker([point[0], point[1]], {pane: 'approximatePane', radius: 8, color: '#d9480f', fillColor: '#fd7e14', fillOpacity: 0.9, weight: 2}).addTo(map).bindPopup(popupText);
+	|    L.circleMarker([point[0], point[1]], {pane: 'approximatePane', radius: 8, color: '#d9480f', fillColor: '#fd7e14', fillOpacity: 0.9, weight: 2}).addTo(clientLayer).bindPopup(popupText);
+	|  } else if (manyPoints) {
+	|    L.circleMarker([point[0], point[1]], {radius: 5, color: '#1864ab', fillColor: '#339af0', fillOpacity: 0.9, weight: 1}).addTo(clientLayer).bindPopup(popupText);
 	|  } else {
-	|    L.marker([point[0], point[1]]).addTo(map).bindPopup(popupText);
+	|    L.marker([point[0], point[1]]).addTo(clientLayer).bindPopup(popupText);
 	|  }
 	|  bounds.push([point[0], point[1]]);
 	|}
+	|for (var otherIndex = 0; otherIndex < otherPoints.length; otherIndex++) {
+	|  var otherPoint = otherPoints[otherIndex];
+	|  L.circleMarker([otherPoint[0], otherPoint[1]], {radius: 4, color: '#495057', fillColor: '#adb5bd', fillOpacity: 0.9, weight: 1})
+	|    .addTo(otherLayer).bindPopup('<div><b>' + otherPoint[2] + '</b></div><div>' + otherPoint[3] + '</div><div><i>Не наш клиент, данные OpenStreetMap</i></div>');
+	|  if (points.length === 0) { bounds.push([otherPoint[0], otherPoint[1]]); }
+	|}
+	|for (var districtIndex = 0; districtIndex < districts.length; districtIndex++) {
+	|  var district = districts[districtIndex];
+	|  var isCity = district.level === '9';
+	|  var targetLayer = isCity ? cityLayer : regionLayer;
+	|  var minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+	|  for (var lineIndex = 0; lineIndex < district.lines.length; lineIndex++) {
+	|    var flatLine = district.lines[lineIndex];
+	|    var lineCoordinates = [];
+	|    for (var coordinateIndex = 0; coordinateIndex + 1 < flatLine.length; coordinateIndex += 2) {
+	|      var latitude = flatLine[coordinateIndex], longitude = flatLine[coordinateIndex + 1];
+	|      lineCoordinates.push([latitude, longitude]);
+	|      if (latitude < minLat) { minLat = latitude; } if (latitude > maxLat) { maxLat = latitude; }
+	|      if (longitude < minLon) { minLon = longitude; } if (longitude > maxLon) { maxLon = longitude; }
+	|    }
+	|    L.polyline(lineCoordinates, isCity ? {color: '#1c7ed6', weight: 2, dashArray: '6 4', interactive: false} : {color: '#7048e8', weight: 2, opacity: 0.7, interactive: false}).addTo(targetLayer);
+	|  }
+	|  if (maxLat >= minLat) {
+	|    var districtName = (district.name || '').replace(' муниципальный округ', ' м. о.').replace(' городской округ', ' г. о.');
+	|    var districtLabel = L.tooltip({permanent: true, direction: 'center', className: 'district-label' + (isCity ? ' city' : '')})
+	|      .setLatLng([(minLat + maxLat) / 2, (minLon + maxLon) / 2]).setContent(districtName);
+	|    (isCity ? cityLabels : regionLabels).push({label: districtLabel, layer: targetLayer});
+	|  }
+	|}
+	|function updateDistrictLabels() {
+	|  var zoomLevel = map.getZoom();
+	|  var groups = [[regionLabels, zoomLevel >= 7 && zoomLevel <= 11], [cityLabels, zoomLevel >= 11]];
+	|  for (var groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+	|    var labelGroup = groups[groupIndex][0], showLabels = groups[groupIndex][1];
+	|    for (var labelIndex = 0; labelIndex < labelGroup.length; labelIndex++) {
+	|      var labelItem = labelGroup[labelIndex];
+	|      if (showLabels && map.hasLayer(labelItem.layer)) { labelItem.label.addTo(map); } else { map.removeLayer(labelItem.label); }
+	|    }
+	|  }
+	|}
+	|map.on('zoomend overlayadd overlayremove', updateDistrictLabels);
+	|var overlays = {'Наши клиенты': clientLayer};
+	|if (otherPoints.length > 0) { overlays['Не клиенты (' + otherPoints.length + ')'] = otherLayer; }
+	|if (districts.length > 0) { overlays['Округа края'] = regionLayer; overlays['Районы Перми'] = cityLayer; }
+	|L.control.layers(null, overlays, {collapsed: false}).addTo(map);
+	|var legend = L.control({position: 'bottomleft'});
+	|legend.onAdd = function () {
+	|  var legendBox = L.DomUtil.create('div', 'legend');
+	|  legendBox.innerHTML = '<div><i style=""background:#339af0""></i>Наш клиент</div><div><i style=""background:#fd7e14""></i>Клиент, точка приблизительная</div>'
+	|    + (otherPoints.length > 0 ? '<div><i style=""background:#adb5bd""></i>Не клиент</div>' : '');
+	|  return legendBox;
+	|};
+	|legend.addTo(map);
 	|if (bounds.length > 0) { map.fitBounds(bounds, {padding: [30, 30], maxZoom: 16}); }
 	|else { map.setView([58.01, 56.25], 10); }
+	|updateDistrictLabels();
 	|</script></body></html>";
 
-	Возврат СтрЗаменить(ТекстСтраницы, "[ТочкиКарты]", "[" + ТекстТочек + "]");
+	ТекстСтраницы = СтрЗаменить(ТекстСтраницы, "[ТочкиКарты]", "[" + СтрСоединить(ЗаписиТочек, ",") + "]");
+	ТекстСтраницы = СтрЗаменить(ТекстСтраницы, "[ТочкиНеКлиентов]", "[" + СтрСоединить(ЗаписиНеКлиентов, ",") + "]");
+	Возврат СтрЗаменить(ТекстСтраницы, "ГраницыРайонов;", ТекстГраниц + ";");
 
 КонецФункции
 
