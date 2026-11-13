@@ -50,7 +50,7 @@
 			</UsePurposes>
 			<ScriptVariant>Russian</ScriptVariant>
 			<Vendor/>
-			<Version>1.2.0.1</Version>
+			<Version>1.3.0.0</Version>
 			<Caption/>
 			<ShortCaption/>
 			<BriefInformation/>
@@ -67,7 +67,9 @@
 			<CommonModule>кр_ИсточникДоговоры</CommonModule>
 			<CommonModule>кр_РегламентныеЗадания</CommonModule>
 			<CommonModule>кр_ТочкиПродаж</CommonModule>
+			<CommonModule>кр_ИсточникМеркурий</CommonModule>
 			<Constant>кр_ГраницыРайонов</Constant>
+			<Constant>кр_ПодключениеВетис</Constant>
 			<Catalog>Проекты</Catalog>
 			<Catalog>ДоговорыКонтрагентов</Catalog>
 			<Catalog>Контрагенты</Catalog>
