@@ -115,9 +115,11 @@
 	|  errorBox.style.display = diagnosticErrors.length > 0 ? 'block' : 'none';
 	|  errorBox.innerHTML = 'Ошибка карты (пришлите снимок разработчику):<br>' + diagnosticErrors.slice(-5).join('<br>');
 	|}
-	|window.onerror = function (errorMessage, sourceAddress, lineNumber, columnNumber) {
+	|window.onerror = function (errorMessage, sourceAddress, lineNumber, columnNumber, errorObject) {
 	|  var zoomText = (typeof map !== 'undefined' && map.getZoom) ? ', масштаб ' + map.getZoom() : '';
-	|  diagnosticErrors.push(String(errorMessage) + ' (строка ' + lineNumber + ':' + (columnNumber || '?') + zoomText + ')');
+	|  var sourceName = String(sourceAddress || '').split('/').pop();
+	|  var stackText = (errorObject && errorObject.stack) ? '<br>' + String(errorObject.stack).split('\n').slice(0, 4).join('<br>') : '';
+	|  diagnosticErrors.push(String(errorMessage) + ' (' + sourceName + ' ' + lineNumber + ':' + (columnNumber || '?') + zoomText + ')' + stackText);
 	|  showDiagnosticErrors();
 	|  return false;
 	|};
@@ -131,7 +133,7 @@
 	|}
 	|</script>
 	|<link rel=""stylesheet"" href=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"">
-	|<script src=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.js""></script>
+	|<script src=""https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.js"" crossorigin=""anonymous""></script>
 	|<style>html, body, #map {height: 100%; margin: 0;} .point-link {font-weight: bold;}
 	|.district-label {background: transparent; border: none; box-shadow: none; font: bold 11px sans-serif; color: #5f3dc4; text-shadow: 0 0 3px #fff;}
 	|.district-label.city {color: #1864ab;}
