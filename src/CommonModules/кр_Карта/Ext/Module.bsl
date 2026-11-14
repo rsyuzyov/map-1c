@@ -107,14 +107,40 @@
 	|<html><head>
 	|<meta http-equiv=""X-UA-Compatible"" content=""IE=edge"">
 	|<meta charset=""utf-8"">
+	|<script>
+	|var diagnosticErrors = [];
+	|function showDiagnosticErrors() {
+	|  var errorBox = document.getElementById('diagnostic-errors');
+	|  if (!errorBox) { return; }
+	|  errorBox.style.display = diagnosticErrors.length > 0 ? 'block' : 'none';
+	|  errorBox.innerHTML = 'Ошибка карты (пришлите снимок разработчику):<br>' + diagnosticErrors.slice(-5).join('<br>');
+	|}
+	|window.onerror = function (errorMessage, sourceAddress, lineNumber, columnNumber) {
+	|  var zoomText = (typeof map !== 'undefined' && map.getZoom) ? ', масштаб ' + map.getZoom() : '';
+	|  diagnosticErrors.push(String(errorMessage) + ' (строка ' + lineNumber + ':' + (columnNumber || '?') + zoomText + ')');
+	|  showDiagnosticErrors();
+	|  return false;
+	|};
+	|function browserEngineName() {
+	|  var agentText = navigator.userAgent;
+	|  if (agentText.indexOf('Trident') >= 0 || agentText.indexOf('MSIE') >= 0) { return 'Internet Explorer'; }
+	|  if (agentText.indexOf('Edg/') >= 0) { return 'Edge (Chromium)'; }
+	|  if (agentText.indexOf('Chrome/') >= 0) { return 'Chromium'; }
+	|  if (agentText.indexOf('AppleWebKit') >= 0) { return 'WebKit'; }
+	|  return agentText.substring(0, 60);
+	|}
+	|</script>
 	|<link rel=""stylesheet"" href=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"">
 	|<script src=""https://unpkg.com/leaflet@1.9.4/dist/leaflet.js""></script>
 	|<style>html, body, #map {height: 100%; margin: 0;} .point-link {font-weight: bold;}
 	|.district-label {background: transparent; border: none; box-shadow: none; font: bold 11px sans-serif; color: #5f3dc4; text-shadow: 0 0 3px #fff;}
 	|.district-label.city {color: #1864ab;}
 	|.legend {background: #fff; padding: 6px 8px; font: 12px sans-serif; line-height: 18px; border-radius: 4px;}
-	|.legend i {display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px;}</style>
-	|</head><body><div id=""map""></div>
+	|.legend i {display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px;}
+	|.legend .engine {color: #868e96; font-size: 10px;}
+	|#diagnostic-errors {display: none; position: absolute; top: 10px; left: 60px; right: 230px; z-index: 2000; background: #fff5f5;
+	|  border: 2px solid #e03131; color: #c92a2a; font: 12px sans-serif; padding: 6px 8px; border-radius: 4px;}</style>
+	|</head><body><div id=""map""></div><div id=""diagnostic-errors""></div>
 	|<script>
 	|var points = [ТочкиКарты];
 	|var otherPoints = [ТочкиНеКлиентов];
@@ -207,13 +233,21 @@
 	|legend.onAdd = function () {
 	|  var legendBox = L.DomUtil.create('div', 'legend');
 	|  legendBox.innerHTML = '<div><i style=""background:#339af0""></i>Наш клиент</div><div><i style=""background:#fd7e14""></i>Клиент, точка приблизительная</div>'
-	|    + (otherPoints.length > 0 ? '<div><i style=""background:#adb5bd""></i>Не клиент</div>' : '');
+	|    + (otherPoints.length > 0 ? '<div><i style=""background:#adb5bd""></i>Не клиент</div>' : '')
+	|    + '<div class=""engine"" id=""engine-line""></div>';
 	|  return legendBox;
 	|};
 	|legend.addTo(map);
+	|function updateEngineLine() {
+	|  var engineLine = document.getElementById('engine-line');
+	|  if (engineLine) { engineLine.innerHTML = browserEngineName() + ', масштаб ' + map.getZoom(); }
+	|}
+	|map.on('zoomend', updateEngineLine);
 	|if (bounds.length > 0) { map.fitBounds(bounds, {padding: [30, 30], maxZoom: 16}); }
 	|else { map.setView([58.01, 56.25], 10); }
 	|updateDistrictLabels();
+	|updateEngineLine();
+	|showDiagnosticErrors();
 	|</script></body></html>";
 
 	ТекстСтраницы = СтрЗаменить(ТекстСтраницы, "[ТочкиКарты]", "[" + СтрСоединить(ЗаписиТочек, ",") + "]");
